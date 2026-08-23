@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Resource Requirement Definition</title>
+<style>
+:root{
+  --navy:#0A1F44;
+  --navy-mid:#143260;
+  --navy-soft:#1E4478;
+  --teal:#5BB4BC;
+  --teal-deep:#3A8F97;
+  --gold:#E8B452;
+  --gold-deep:#C8933A;
+  --canvas:#F4F6F9;
+  --paper:#FFFFFF;
+  --ink:#000000;
+  --muted:#000000;
+  --faint:#9AA8BC;   /* dark rail only */
+  --line:#E2E7EF;
+  --line-soft:#EEF1F6;
+  --shadow:0 1px 2px rgba(10,31,68,.05), 0 12px 32px rgba(10,31,68,.07);
+  --rail:288px;
+  --font:"Avenir Next","Avenir","Calibri","Segoe UI",Helvetica,Arial,sans-serif;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font);
+  background:var(--canvas);
+  color:var(--ink);
+  font-size:15px;
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+button,input,textarea,select{font-family:inherit;font-size:inherit;color:inherit;}
+button{cursor:pointer;border:none;background:none;}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+
+/* ---------- Masthead ---------- */
+.masthead{
+  position:sticky;top:0;z-index:40;
+  background:var(--navy);
+  color:#fff;
+  display:flex;align-items:center;gap:20px;
+  padding:0 26px;height:66px;
+  border-bottom:1px solid rgba(232,180,82,.35);
+}
+.mark{display:flex;align-items:center;}
+.mark-logo{height:21px;width:auto;flex:none;display:block;}
+.gate-card .mark-logo{height:31px;}
+.mast-divider{width:1px;height:26px;background:rgba(255,255,255,.16);}
+.mast-title{font-size:13.5px;font-weight:500;letter-spacing:.01em;}
+.mast-title span{color:var(--faint);font-weight:400;}
+.mast-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+
+.pill{
+  display:inline-flex;align-items:center;gap:7px;
+  height:32px;padding:0 13px;border-radius:16px;
+  font-size:12px;letter-spacing:.03em;font-weight:500;
+  border:1px solid rgba(255,255,255,.2);color:#E8EDF5;
+  background:rgba(255,255,255,.05);
+  transition:background .15s ease,border-color .15s ease;
+}
+.pill:hover{background:rgba(255,255,255,.12);}
+.pill.role-client{border-color:rgba(91,180,188,.55);color:#BFE6EA;}
+.pill.role-internal{border-color:var(--gold);color:#F6D9A0;background:rgba(232,180,82,.12);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex:none;}
+.dot.saving{background:var(--gold);animation:pulse 1s infinite;}
+.dot.offline{background:#8D9AAE;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ---------- Shell ---------- */
+.shell{display:grid;grid-template-columns:var(--rail) 1fr;min-height:calc(100vh - 66px);}
+
+/* ---------- Rail ---------- */
+.rail{
+  background:var(--navy);color:#fff;
+  padding:26px 0 34px;
+  position:sticky;top:66px;height:calc(100vh - 66px);
+  overflow-y:auto;
+}
+.rail-head{padding:0 26px 18px;}
+.eyebrow{
+  font-size:10px;letter-spacing:.19em;text-transform:uppercase;
+  color:var(--gold);font-weight:600;
+}
+.rail-head h1{
+  font-size:19px;line-height:1.3;margin:9px 0 0;font-weight:500;letter-spacing:-.01em;
+}
+.rail-head p{margin:7px 0 0;font-size:12.5px;color:var(--faint);line-height:1.5;}
+
+/* completeness gauge: the signature element */
+.gauge{padding:16px 26px 20px;border-top:1px solid rgba(255,255,255,.09);border-bottom:1px solid rgba(255,255,255,.09);margin-bottom:8px;}
+.gauge-top{display:flex;align-items:baseline;justify-content:space-between;}
+.gauge-label{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
+.gauge-value{font-size:22px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+.gauge-bar{display:flex;gap:3px;margin-top:11px;}
+.gauge-seg{flex:1;height:5px;border-radius:1px;background:rgba(255,255,255,.13);transition:background .35s ease;}
+.gauge-seg.on{background:var(--gold);}
+.gauge-note{margin-top:9px;font-size:11.5px;color:var(--faint);}
+
+.nav-list{list-style:none;margin:0;padding:6px 14px;}
+.nav-item{
+  display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;
+  padding:9px 12px;border-radius:5px;color:#C9D4E4;
+  border-left:2px solid transparent;
+  transition:background .14s ease,color .14s ease;
+}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff;}
+.nav-item.active{background:rgba(91,180,188,.13);color:#fff;border-left-color:var(--teal);}
+.nav-num{
+  font-size:10.5px;letter-spacing:.06em;color:var(--faint);
+  font-variant-numeric:tabular-nums;padding-top:2px;min-width:19px;
+}
+.nav-item.active .nav-num{color:var(--teal);}
+.nav-label{font-size:13px;line-height:1.35;flex:1;}
+.nav-state{width:8px;height:8px;border-radius:50%;margin-top:5px;flex:none;
+  border:1.5px solid rgba(255,255,255,.28);background:transparent;}
+.nav-state.part{border-color:var(--gold);background:transparent;box-shadow:inset 0 0 0 2px var(--gold);}
+.nav-state.done{border-color:var(--gold);background:var(--gold);}
+.nav-tag{
+  font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--gold);border:1px solid rgba(232,180,82,.4);border-radius:2px;
+  padding:1px 5px;margin-top:3px;align-self:flex-start;
+}
+
+/* ---------- Main ---------- */
+.main{padding:40px 48px 90px;max-width:1000px;}
+.crumb{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
+.sec-title{font-size:31px;line-height:1.18;letter-spacing:-.025em;font-weight:500;margin:12px 0 0;}
+.sec-sub{margin:12px 0 0;color:var(--muted);font-size:15px;max-width:62ch;}
+.rule{height:1px;background:var(--line);margin:28px 0 30px;position:relative;}
+.rule::before{content:"";position:absolute;left:0;top:0;width:56px;height:1px;background:var(--gold);}
+
+.card{
+  background:var(--paper);border:1px solid var(--line);border-radius:8px;
+  padding:26px 28px;margin-bottom:16px;box-shadow:var(--shadow);
+}
+.field + .field{margin-top:26px;padding-top:26px;border-top:1px solid var(--line-soft);}
+.f-label{font-size:15px;font-weight:600;letter-spacing:-.005em;display:block;}
+.f-help{font-size:13px;color:var(--muted);margin-top:5px;max-width:64ch;}
+.f-hint{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:7px;font-weight:600;}
+.req{color:var(--gold-deep);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-left:8px;font-weight:600;}
+
+textarea,input[type=text],input[type=number]{
+  width:100%;margin-top:12px;padding:11px 13px;
+  border:1px solid var(--line);border-radius:5px;background:#FBFCFD;
+  transition:border-color .15s ease,background .15s ease,box-shadow .15s ease;
+}
+textarea{min-height:104px;resize:vertical;line-height:1.6;}
+input[type=number]{max-width:120px;}
+textarea:focus,input:focus{
+  border-color:var(--teal);background:#fff;
+  box-shadow:0 0 0 3px rgba(91,180,188,.14);outline:none;
+}
+textarea::placeholder,input::placeholder{color:#000;opacity:.62;font-style:italic;}
+
+.opts{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.opt{
+  display:flex;align-items:flex-start;gap:11px;padding:11px 14px;
+  border:1px solid var(--line);border-radius:5px;background:#FBFCFD;
+  transition:border-color .14s ease,background .14s ease;
+}
+.opt:hover{border-color:#C6D2E2;background:#fff;}
+.opt.sel{border-color:var(--teal);background:rgba(91,180,188,.07);}
+.opt-mark{
+  width:16px;height:16px;border-radius:50%;border:1.5px solid #C1CDDD;
+  flex:none;margin-top:2px;position:relative;transition:border-color .14s ease;
+}
+.opt.sel .opt-mark{border-color:var(--teal-deep);}
+.opt.sel .opt-mark::after{
+  content:"";position:absolute;inset:3px;border-radius:50%;background:var(--teal-deep);
+}
+.opt-text{font-size:14px;line-height:1.45;}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.chip{
+  padding:7px 14px;border:1px solid var(--line);border-radius:15px;
+  background:#FBFCFD;font-size:13.5px;color:var(--muted);
+  transition:all .14s ease;
+}
+.chip:hover{border-color:#C6D2E2;color:var(--ink);}
+.chip.on{background:var(--navy);border-color:var(--navy);color:#fff;}
+
+/* ---------- Skill matrix ---------- */
+.comment-card{border-left:2px solid var(--gold);}
+.comment-card textarea{min-height:120px;}
+.mx-title{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-deep);font-weight:600;margin-bottom:14px;}
+.mx-head.two,.mx-row.two{grid-template-columns:1fr 268px;}
+.mx-row.two .mx-skill{font-weight:400;line-height:1.5;padding:6px 0;}
+.source-note{margin-top:16px;padding:12px 16px;border-left:2px solid var(--gold);background:#fff;
+  border-radius:0 5px 5px 0;font-size:13px;color:var(--muted);border-top:1px solid var(--line);
+  border-right:1px solid var(--line);border-bottom:1px solid var(--line);}
+.matrix{margin-top:6px;border:1px solid var(--line);border-radius:7px;overflow:hidden;}
+.mx-head{
+  display:grid;grid-template-columns:1fr 148px 268px;gap:14px;align-items:center;
+  padding:11px 18px;background:#F0F3F8;border-bottom:1px solid var(--line);
+}
+.mx-head span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+.mx-row{
+  display:grid;grid-template-columns:1fr 148px 268px;gap:14px;align-items:center;
+  padding:10px 18px;border-bottom:1px solid var(--line-soft);background:#fff;
+}
+.mx-row:last-child{border-bottom:none;}
+.mx-row:hover{background:#FAFBFD;}
+.mx-skill{font-size:14px;font-weight:500;}
+.mx-rec{font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:600;}
+.mx-rec.must{color:var(--gold-deep);}
+.mx-rec.preferred{color:var(--teal-deep);}
+.mx-rec.no{color:#000;}
+.tri{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#EDF0F5;padding:3px;border-radius:5px;}
+.tri button{
+  padding:6px 4px;border-radius:3px;font-size:11.5px;font-weight:500;
+  color:var(--muted);transition:all .14s ease;white-space:nowrap;
+}
+.tri button:hover{color:var(--ink);}
+.tri button.on[data-v=must]{background:var(--gold);color:#3D2B08;font-weight:600;}
+.tri button.on[data-v=preferred]{background:var(--teal);color:#062A2D;font-weight:600;}
+.tri button.on[data-v=no]{background:#8FA0B6;color:#fff;font-weight:600;}
+
+.composition{display:flex;align-items:center;gap:14px;margin-top:16px;padding:14px 18px;
+  background:#FAFBFD;border:1px solid var(--line-soft);border-radius:6px;}
+.comp-bar{flex:1;height:8px;border-radius:4px;overflow:hidden;display:flex;background:#E7EBF2;}
+.comp-seg{height:100%;transition:width .3s ease;}
+.comp-legend{font-size:12px;color:var(--muted);white-space:nowrap;}
+.comp-legend b{color:var(--ink);font-weight:600;}
+
+/* ---------- Internal panel ---------- */
+.internal{
+  background:#0C2450;color:#DCE4F0;border:1px solid rgba(232,180,82,.4);
+  border-radius:8px;padding:24px 26px;margin-bottom:16px;
+}
+.internal h3{margin:0;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600;}
+.internal p.i-note{font-size:12.5px;color:#98A8C2;margin:8px 0 18px;}
+.internal textarea{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.16);color:#fff;}
+.internal textarea:focus{background:rgba(255,255,255,.09);border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,180,82,.16);}
+.internal .f-label{color:#fff;font-size:14px;}
+.internal input[type=text],.internal input[type=number]{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.16);color:#fff;}
+.i-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:14px;}
+.i-out{background:rgba(232,180,82,.1);border:1px solid rgba(232,180,82,.32);border-radius:6px;padding:14px 16px;margin-top:16px;}
+.i-out .k{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);}
+.i-out .v{font-size:23px;font-weight:600;letter-spacing:-.02em;color:#fff;margin-top:3px;font-variant-numeric:tabular-nums;}
+.i-tree{font-size:13.5px;line-height:1.6;margin-top:14px;padding:14px 16px;background:rgba(255,255,255,.05);border-left:2px solid var(--teal);border-radius:0 5px 5px 0;}
+.i-tree b{color:#fff;}
+
+/* ---------- Review ---------- */
+.audit{list-style:none;margin:0;padding:0;}
+.audit li{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line-soft);font-size:14px;}
+.audit li:last-child{border-bottom:none;}
+.audit .st{font-size:10px;letter-spacing:.11em;text-transform:uppercase;font-weight:600;
+  border-radius:2px;padding:2px 7px;flex:none;min-width:78px;text-align:center;}
+.audit .st.ok{color:#2C6B3F;background:#E4F1E8;}
+.audit .st.open{color:var(--gold-deep);background:#FBF0DA;}
+
+/* ---------- Footer nav ---------- */
+.footnav{display:flex;align-items:center;gap:12px;margin-top:26px;}
+.btn{
+  height:42px;padding:0 22px;border-radius:5px;font-size:14px;font-weight:500;
+  display:inline-flex;align-items:center;gap:9px;transition:all .15s ease;
+  border:1px solid transparent;
+}
+.btn-primary{background:var(--navy);color:#fff;}
+.btn-primary:hover{background:var(--navy-soft);}
+.btn-gold{background:var(--gold);color:#3D2B08;font-weight:600;}
+.btn-gold:hover{background:var(--gold-deep);color:#fff;}
+.btn-ghost{border-color:var(--line);color:var(--muted);background:#fff;}
+.btn-ghost:hover{border-color:#C6D2E2;color:var(--ink);}
+.btn[disabled]{opacity:.4;pointer-events:none;}
+.footnote{margin-left:auto;font-size:12px;color:var(--muted);}
+
+/* ---------- Modal ---------- */
+.veil{position:fixed;inset:0;background:rgba(10,31,68,.55);display:none;
+  align-items:center;justify-content:center;z-index:60;padding:20px;}
+.veil.show{display:flex;}
+.modal{background:#fff;border-radius:9px;padding:30px;max-width:400px;width:100%;box-shadow:0 24px 60px rgba(10,31,68,.3);}
+.modal h3{margin:0 0 6px;font-size:19px;font-weight:600;letter-spacing:-.01em;}
+.modal p{margin:0;color:var(--muted);font-size:13.5px;}
+.modal .err{color:#B0392E;font-size:12.5px;margin-top:10px;display:none;}
+.modal .err.show{display:block;}
+
+.gate{position:fixed;inset:0;z-index:100;background:var(--navy);
+  display:flex;align-items:center;justify-content:center;padding:24px;}
+.gate.hide{display:none;}
+.gate-card{max-width:430px;width:100%;text-align:left;}
+.gate-card .mark{margin-bottom:30px;}
+.gate-card .eyebrow{margin-bottom:10px;}
+.gate-card h2{color:#fff;font-size:29px;line-height:1.2;font-weight:500;letter-spacing:-.02em;margin:0 0 12px;}
+.gate-card p{color:#C9D4E4;font-size:14.5px;margin:0 0 22px;line-height:1.55;}
+.gate-card #gateEmail{letter-spacing:.01em;font-size:15px;}
+.gate-card input{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.22);
+  color:#fff;height:48px;letter-spacing:.28em;font-size:17px;margin:0;}
+.gate-card input::placeholder{color:#8A9AB4;letter-spacing:.04em;font-size:14px;font-style:normal;opacity:1;}
+.gate-card input:focus{background:rgba(255,255,255,.11);border-color:var(--gold);box-shadow:0 0 0 3px rgba(232,180,82,.16);}
+.gate-card .btn{margin-top:16px;width:100%;justify-content:center;}
+.gate-err{color:#F2A9A0;font-size:13px;margin-top:12px;display:none;}
+.gate-err.show{display:block;}
+.gate-foot{margin-top:30px;padding-top:20px;border-top:1px solid rgba(255,255,255,.12);
+  color:#8A9AB4;font-size:12px;}
+
+.lockbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  background:#0C2450;color:#fff;border-radius:7px;padding:15px 20px;margin-bottom:20px;
+  border-left:3px solid var(--gold);}
+.lockbar .lb-text{font-size:13.5px;line-height:1.5;flex:1;min-width:220px;}
+.lockbar .lb-text b{color:var(--gold);}
+.lockbar .btn{height:36px;padding:0 16px;font-size:13px;}
+.is-locked .chip,.is-locked .opt,.is-locked .tri button{cursor:not-allowed;opacity:.72;}
+.is-locked textarea,.is-locked input[type=text]{background:#F1F3F7;cursor:not-allowed;color:#000;}
+.audit-log{list-style:none;margin:14px 0 0;padding:0;font-size:13px;}
+.audit-log li{padding:6px 0;border-bottom:1px solid var(--line-soft);}
+.audit-log li:last-child{border-bottom:none;}
+
+.toast{
+  position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(90px);
+  background:var(--navy);color:#fff;padding:13px 22px;border-radius:6px;font-size:13.5px;
+  box-shadow:0 14px 34px rgba(10,31,68,.28);z-index:70;transition:transform .28s ease;
+  border-left:3px solid var(--gold);
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+.banner{
+  background:#FBF0DA;border:1px solid #EBD3A0;border-radius:6px;
+  padding:12px 16px;font-size:13px;color:#000;margin-bottom:18px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1080px){
+  .mx-head,.mx-row{grid-template-columns:1fr 120px 232px;}
+}
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr;}
+  .rail{position:static;height:auto;padding-bottom:18px;}
+  .nav-list{display:flex;overflow-x:auto;padding:6px 14px 12px;gap:6px;}
+  .nav-item{flex:none;width:190px;}
+  .main{padding:28px 20px 80px;}
+  .sec-title{font-size:25px;}
+  .mx-head{display:none;}
+  .mx-row{grid-template-columns:1fr;gap:9px;padding:15px 16px;}
+  .mast-title{display:none;}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important;}
+}
+
+/* ---------- Print ---------- */
+@media print{
+  .rail,.masthead,.footnav,.veil,.toast,.internal{display:none !important;}
+  .shell{display:block;}
+  .main{padding:0;max-width:none;}
+  .card{box-shadow:none;break-inside:avoid;border-color:#CCC;}
+  .print-all{display:block !important;}
+}
+.print-all{display:none;}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="mark">
+    <img class="mark-logo" alt="Prowesstics" src="data:image/png;base64,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" />
+    
+  </div>
+  <div class="mast-divider"></div>
+  <div class="mast-title">Resource Requirement Definition <span>&nbsp;/&nbsp; Optimization and Applied AI</span></div>
+  <div class="mast-right">
+    <div class="pill" id="syncPill"><span class="dot" id="syncDot"></span><span id="syncText">Connecting</span></div>
+    <button class="pill role-client" id="roleBtn">Client view</button>
+  </div>
+</header>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="rail-head">
+      <div class="eyebrow">Requirement Definition</div>
+      <h1>Two specialist profiles, defined before sourcing</h1>
+      <p>Prowesstics has set out its understanding. Your answers replace our assumptions.</p>
+    </div>
+    <div class="gauge">
+      <div class="gauge-top">
+        <span class="gauge-label">Definition complete</span>
+        <span class="gauge-value" id="gaugeValue">0%</span>
+      </div>
+      <div class="gauge-bar" id="gaugeBar"></div>
+      <div class="gauge-note" id="gaugeNote">Nothing answered yet</div>
+    </div>
+    <ul class="nav-list" id="navList"></ul>
+  </aside>
+
+  <main class="main" id="main"></main>
+</div>
+
+<div class="gate" id="gate">
+  <div class="gate-card" id="gateCard">
+    <div class="mark"><img class="mark-logo" alt="Prowesstics" src="data:image/png;base64,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" /></div>
+    <div class="eyebrow">Resource Requirement Definition</div>
+    <h2>Two specialist profiles, defined before sourcing</h2>
+    <p>Sign in with the email address and four digit code issued to you. Your answers are recorded against your name and save as you go.</p>
+    <input type="email" id="gateEmail" placeholder="Email address" autocomplete="username" />
+    <input type="password" id="gateInput" placeholder="Four digit code" inputmode="numeric" maxlength="4" autocomplete="off" style="margin-top:12px;" />
+    <div class="gate-err" id="gateErr">That email and code do not match. Check the details we sent you.</div>
+    <button class="btn btn-gold" id="gateGo">Sign in</button>
+    <div class="gate-foot">Access is issued by Prowesstics. If your code does not work, reply to the email that sent you this link.</div>
+  </div>
+</div>
+
+<div class="veil" id="pinVeil">
+  <div class="modal">
+    <h3 id="pinTitle">Prowesstics access</h3>
+    <p id="pinBody">Enter the internal access code to switch views. The client view stays unchanged for everyone else.</p>
+    <input type="password" id="pinInput" placeholder="Access code" autocomplete="off" />
+    <div class="err" id="pinErr">That code is not recognised. Try again.</div>
+    <div class="footnav" style="margin-top:18px;">
+      <button class="btn btn-primary" id="pinGo">Unlock</button>
+      <button class="btn btn-ghost" id="pinCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- Schema ---------- */
+const OPT_SKILLS = [
+  ["Mathematical optimization","must"],
+  ["Operations research","must"],
+  ["Mixed integer programming, MIP and MILP","must"],
+  ["Transportation optimization","must"],
+  ["Routing and network flow","must"],
+  ["Capacity and resource allocation","must"],
+  ["Python","must"],
+  ["Gurobi or CPLEX","preferred"],
+  ["Pyomo or OR-Tools","preferred"],
+  ["Heuristic and metaheuristic methods","preferred"],
+  ["Supply chain and logistics domain","preferred"],
+  ["Production implementation of models","preferred"],
+  ["Large scale problem formulation","must"],
+  ["Choosing exact against heuristic methods under a solve time limit","must"],
+  ["Solution quality measurement and derived bounds","must"],
+  ["Translating parameters and penalties into business trade offs","must"],
+  ["Working directly with operational stakeholders","preferred"]
+];
+const AI_SKILLS = [
+  ["Python","must"],
+  ["Generative AI","must"],
+  ["LLM applications","must"],
+  ["Structured output and schema control","must"],
+  ["Prompt engineering","must"],
+  ["AI evaluation","must"],
+  ["Accuracy measurement","must"],
+  ["Regression testing","must"],
+  ["Monitoring and logging","must"],
+  ["Human in the loop workflows","must"],
+  ["Production deployment","must"],
+  ["Document intelligence","preferred"],
+  ["Retrieval augmented generation","preferred"],
+  ["AI agents","preferred"],
+  ["Cloud platform","preferred"],
+  ["MLOps","preferred"],
+  ["Hosting and scheduling","must"],
+  ["Continuous integration","must"],
+  ["Prompt and output schema versioning","must"],
+  ["Structured logging","must"],
+  ["Routing low confidence output to human review","must"],
+  ["Curated ground truth sets","must"],
+  ["Regression gates on model changes","must"],
+  ["Assessing new applied AI developments for operational use","preferred"]
+];
+
+const BRIEF_OPT = [
+  ["Design, build, maintain and improve mathematical optimization models supporting network planning, capacity and resource allocation, routing and related operational decisions"],
+  ["Formulate and solve large scale mixed integer and network flow problems, selecting exact or heuristic methods based on problem structure and the time available to solve"],
+  ["Establish and maintain rigorous solution quality measurement, including derived bounds, so that the value of every model change can be demonstrated rather than asserted"],
+  ["Translate model parameters, penalties and constraints into the business trade offs they represent, and adjust them in partnership with operational stakeholders"]
+];
+const BRIEF_AI = [
+  ["Design and deliver applied AI applications that automate manual processes, extract structured data from unstructured sources and support operational decision making"],
+  ["Move AI solutions from prototype to production, including hosting and scheduling, continuous integration, versioning of prompts and output schemas, structured logging, monitoring and human review paths for low confidence output"],
+  ["Design and maintain evaluation frameworks for AI output, including curated ground truth sets, accuracy measurement and regression gates that determine objectively whether a change improved results"],
+  ["Stay current with developments in applied AI and optimization, and assess which are worth adopting in an operational environment"]
+];
+const CONFIRM_LABELS = {must:"As stated",preferred:"Needs a change",no:"Not in scope"};
+
+const SECTIONS = [
+  {
+    id:"brief", title:"Requirement as received",
+    sub:"Your two opportunities, in your own words. Confirm each line or flag it, and the rest of this form only fills the gaps.",
+    intro:"Received from Andrew Drumm, Lead Data Engineer. Two distinct opportunities, recorded and answered separately throughout.",
+    matrices:[
+      {id:"brief_opt",head:"Opportunity 1, Optimization and Operations Research",rows:BRIEF_OPT,labels:CONFIRM_LABELS,noRec:true,req:true},
+      {id:"brief_ai",head:"Opportunity 2, Applied AI Solution Development",rows:BRIEF_AI,labels:CONFIRM_LABELS,noRec:true,req:true}
+    ]
+  },
+  {
+    id:"context", title:"Business context",
+    sub:"What you are solving, and what a good result looks like. Everything downstream is built from this.",
+    fields:[
+      {id:"ctx_where",type:"chips",req:true,label:"Where the problem shows up today",
+       opts:["Transport planning","Lane and route allocation","Fleet utilisation","Load building","Dispatch","Carrier selection","Rate management","Freight billing and audit","Warehouse coordination","Yard and dock scheduling","Order promising","Inventory positioning","Exception handling","Customer service response","Reporting and visibility"]},
+      {id:"ctx_manual",type:"chips",req:true,label:"What is handled manually today",
+       opts:["Spreadsheet planning","Manual route building","Manual load assignment","Manual carrier selection","Manual document review","Manual data entry","Manual exception triage","Email based coordination","Phone based coordination","Manual reporting","Rules held in people's heads"]},
+      {id:"ctx_outcome",type:"chips",req:true,label:"The outcomes you expect",
+       opts:["Lower transport cost","Higher fleet utilisation","Fewer planner hours","Faster planning cycle","Better on time performance","Fewer manual touches","Fewer errors and reworks","Better decision visibility","Scale without adding headcount","Faster response to customers","Higher margin per load"]},
+      {id:"stage",type:"radio",req:true,label:"Where this sits today",
+       opts:["A new initiative","An existing solution being extended","A prototype moving to production","A production system needing more capacity","Replacing a vendor or tool","Feasibility still being tested"]},
+      {id:"ctx_size",type:"radio",req:true,label:"Size of the improvement you are targeting",
+       opts:["Under five percent","Five to ten percent","Ten to twenty percent","Above twenty percent","Not measured in percentage terms","Not quantified yet"]}
+    ]
+  },
+  {
+    id:"opt", title:"Optimization use case",
+    sub:"The transportation and logistics problems the Operations Research specialist would own.",
+    fields:[
+      {id:"opt_types",type:"chips",req:true,label:"Problem types in scope",
+       opts:["Vehicle routing","Fleet optimization","Route planning","Load planning","Shipment consolidation","Network design","Transportation planning","Capacity allocation","Driver scheduling","Dispatch optimization","Delivery scheduling","Warehouse and transport coordination","Carrier assignment","Mode selection","Cost minimization","Service level optimization","Empty mile reduction"]},
+      {id:"opt_constraints",type:"chips",req:true,label:"Constraints that actually bind",
+       opts:["Time windows","Vehicle capacity","Driver hours of service","Multi depot","Backhauls","Mixed fleet","Hazmat rules","Temperature control","Dock and appointment slots","Cross docking","Multi leg and transshipment","Toll and fuel cost","Service level agreements","Priority customers","Union or labour rules"]},
+      {id:"opt_methods",type:"chips",label:"Methods you expect to be used",
+       opts:["Linear programming","Mixed integer linear programming","Non linear optimization","Constraint programming","Network flow","Graph optimization","Combinatorial optimization","Dynamic programming","Metaheuristics","Genetic algorithms","Local search","Exact algorithms","Approximation algorithms","Simulation","Not decided yet"]},
+      {id:"opt_depth",type:"radio",req:true,label:"How deep does the modelling go",
+       help:"This separates a research led profile from a production engineer.",
+       opts:["Builds the mathematical models from scratch","Balanced across modelling and implementation","Improves and tunes models we already have","Implements and operationalises existing models","Not decided yet"]},
+      {id:"opt_solver",type:"chips",req:true,label:"Solvers and frameworks in use or intended",
+       opts:["Gurobi","CPLEX","OR-Tools","Pyomo","HiGHS","SCIP","FICO Xpress","Custom heuristics","None yet","Open to a recommendation"]},
+      {id:"opt_scale",type:"radio",label:"Typical problem size",
+       opts:["Under one hundred stops or nodes","Hundreds","Thousands","Tens of thousands","Larger than that","Not known yet"]},
+      {id:"opt_freq",type:"radio",label:"How often the model runs",
+       opts:["Real time or near real time","Several times a day","Daily","Weekly","Scenario runs on demand","Not decided yet"]},
+      {id:"opt_deliver",type:"chips",label:"Expected in the first three to six months",
+       opts:["Optimization models","Routing algorithms","Mathematical formulations","Solver implementations","Prototype models","Production optimization engine","APIs","Scenario analysis","Decision support tools","Model documentation","Operational dashboards","Benchmarking against current planning"]}
+    ]
+  },
+  {
+    id:"ai", title:"Applied AI use case",
+    sub:"What the Applied AI Solutions Engineer would build, and how far into production the role reaches.",
+    fields:[
+      {id:"ai_types",type:"chips",req:true,label:"Application types in scope",
+       opts:["Document intelligence","Invoice processing","Data extraction","Classification","Summarization","LLM applications","Retrieval augmented generation","AI agents","Workflow automation","Email triage","Knowledge assistants","Decision support","Anomaly detection","Customer facing applications","Internal operational applications"]},
+      {id:"ai_docs",type:"chips",label:"Document and data types in scope",
+       opts:["Bills of lading","Invoices","Purchase orders","Rate sheets","Carrier contracts","Customs paperwork","Proof of delivery","Emails","Scanned PDFs","Handwritten forms","Photographs","EDI messages","No documents involved"]},
+      {id:"ai_domain",type:"radio",req:true,label:"Domain scope for this role",
+       help:"This decides whether we source from one talent pool or two.",
+       opts:["Transportation and logistics, same as the optimization role","Broader AI work across the business","Both, starting with transportation and logistics","Not decided yet"]},
+      {id:"ai_prod",type:"radio",req:true,label:"Prototype to production ownership",
+       opts:["Builds the AI application only","Builds and deploys it","Owns the full lifecycle including monitoring","Builds it, your platform team deploys","Not decided yet"]},
+      {id:"ai_review",type:"radio",req:true,label:"Human review expectation",
+       opts:["Fully automated once accurate","Human review on exceptions only","Human review on everything at first","Human review always, AI assists","Not decided yet"]},
+      {id:"ai_volume",type:"radio",label:"Processing volume",
+       opts:["Under one thousand items a month","One to ten thousand","Ten to one hundred thousand","Above one hundred thousand","Not known yet"]}
+    ]
+  },
+  {
+    id:"tech", title:"Technology environment",
+    sub:"We have marked what we assume. Correct anything that does not match your stack.",
+    fields:[
+      {id:"tech_cloud",type:"chips",req:true,label:"Cloud and hosting",
+       opts:["AWS","Azure","Google Cloud","On premise","Hybrid","Not decided yet"]},
+      {id:"tech_llm",type:"chips",label:"LLM and AI platforms in use",
+       opts:["OpenAI","Azure OpenAI","Anthropic","Gemini","AWS Bedrock","Open source models","Not decided yet"]},
+      {id:"tech_fw",type:"chips",label:"Frameworks",
+       opts:["LangChain","LlamaIndex","Semantic Kernel","Haystack","Custom framework","Not decided yet"]},
+      {id:"tech_eng",type:"chips",req:true,label:"Engineering stack",
+       opts:["Python","Java","C sharp","FastAPI","REST APIs","Docker","Kubernetes","CI and CD","GitHub","GitLab","Azure DevOps","Terraform"]},
+      {id:"tech_data",type:"chips",label:"Data layer",
+       opts:["SQL","Snowflake","Databricks","Vector databases","Data warehouse","Data lake","Document stores","Object storage","Kafka or streaming"]},
+      {id:"tech_systems",type:"chips",label:"Operational systems the work touches",
+       opts:["Transportation management system","Warehouse management system","ERP","Telematics or GPS","Order management","Customer portal","Carrier portals","Reporting and BI","None yet"]},
+      {id:"tech_ops",type:"chips",label:"AI and model operations expected",
+       opts:["Prompt versioning","Model versioning","Evaluation frameworks","Observability","Logging","Monitoring","Regression testing","Human in the loop review","Not established yet"]},
+      {id:"tech_security",type:"radio",label:"Access and security posture",
+       opts:["Full access to systems and data","Access through a controlled environment","Anonymised or sample data only","Client devices and VPN required","Not decided yet"]}
+    ]
+  },
+  {
+    id:"mxopt", title:"Skill matrix, Optimization",
+    sub:"Our recommendation sits on the left. Set your position on each line.",
+    matrix:{id:"mx_opt",rows:OPT_SKILLS,req:true}
+  },
+  {
+    id:"mxai", title:"Skill matrix, Applied AI",
+    sub:"Our recommendation sits on the left. Set your position on each line.",
+    matrix:{id:"mx_ai",rows:AI_SKILLS,req:true}
+  },
+  {
+    id:"exp", title:"Experience and seniority",
+    sub:"We are working to a five year baseline. Confirm or correct it.",
+    fields:[
+      {id:"exp_years",type:"radio",req:true,label:"Baseline experience",
+       opts:["Three to five years","Five to seven years","Seven to ten years","Ten years and above","Depth matters more than years"]},
+      {id:"exp_priority",type:"radio",req:true,label:"What matters more",
+       opts:["Total years of experience","Years in the specialisation","Depth of relevant projects, regardless of years","Evidence of production systems shipped"]},
+      {id:"exp_background",type:"chips",req:true,label:"Backgrounds we should prioritise",
+       opts:["Transportation and logistics","Supply chain","Manufacturing","Retail or e-commerce","Airlines or rail","Consulting","Product companies","Academia or research","Startups","Large enterprises","No preference"]},
+      {id:"exp_education",type:"radio",label:"Education expectation",
+       opts:["Bachelors is enough","Masters preferred","Masters or doctorate in operations research or a related field","No formal requirement, evidence matters"]},
+      {id:"exp_comms",type:"radio",req:true,label:"How much client facing work is expected",
+       opts:["Works through your team, little direct exposure","Presents results to business stakeholders","Runs workshops with planners and operations","Leads the conversation end to end"]}
+    ]
+  },
+  {
+    id:"team", title:"Team and reporting",
+    sub:"How these people fit into your organisation, and who directs their work.",
+    fields:[
+      {id:"team_model",type:"radio",req:true,label:"How the resources sit in your organisation",
+       opts:["Embedded with your existing team","Joins an existing pod","Forms a new dedicated pod","Prowesstics owns delivery end to end","Not decided yet"]},
+      {id:"team_direction",type:"radio",req:true,label:"Who sets technical direction and daily priorities",
+       opts:["Andrew directly","A technical lead in your team","A product owner","A Prowesstics lead","Shared between both sides"]},
+      {id:"team_decisions",type:"radio",label:"Who owns the final technical decision",
+       opts:["Andrew","Your architecture or engineering lead","The resource, within agreed guardrails","Joint review before anything ships"]},
+      {id:"team_peers",type:"chips",label:"Who they work with day to day",
+       opts:["Transport planners","Operations managers","Data engineers","Software engineers","Data scientists","Product managers","Business analysts","IT and infrastructure","External vendors","Finance"]},
+      {id:"team_repo",type:"radio",label:"Where the code lives",
+       opts:["Your repositories","Prowesstics repositories","Shared repositories","Not decided yet"]},
+      {id:"team_onboard",type:"radio",label:"Onboarding support available",
+       opts:["Dedicated onboarding with a named person","Documentation and a walkthrough","Learn on the job with the team","Limited, they need to be self sufficient"]},
+      {id:"team_name",type:"text",label:"Name and role of the person directing the work",ph:"Optional"}
+    ]
+  },
+  {
+    id:"eng", title:"Engagement and duration",
+    sub:"How many people, on what basis, for how long.",
+    fields:[
+      {id:"eng_count_opt",type:"radio",req:true,label:"Optimization specialists needed",
+       opts:["One","Two","Three","More than three","Not decided yet"]},
+      {id:"eng_count_ai",type:"radio",req:true,label:"Applied AI engineers needed",
+       opts:["One","Two","Three","More than three","Not decided yet"]},
+      {id:"eng_model",type:"radio",req:true,label:"Engagement model",
+       opts:["Full time dedicated","Part time","Contract for a defined project","Staff augmentation","Managed service, outcome owned by Prowesstics","Start with one resource, then scale"]},
+      {id:"eng_duration",type:"radio",req:true,label:"Expected duration",
+       opts:["Three months","Six months","Twelve months","Long term and ongoing","Not decided yet"]},
+      {id:"eng_extend",type:"radio",label:"Likelihood of extension",
+       opts:["Highly likely","Likely","Depends on outcomes at the first review","One time engagement","Too early to say"]},
+      {id:"eng_route",type:"radio",label:"Contracting route",
+       opts:["Direct with Prowesstics","Through your procurement team","Through a managed service provider","Existing master agreement","Not decided yet"]}
+    ]
+  },
+  {
+    id:"loc", title:"Location and working hours",
+    sub:"Where the resources sit and how much of your day they need to cover.",
+    fields:[
+      {id:"loc_model",type:"radio",req:true,label:"Working model",opts:["Remote","Hybrid","Onsite","Remote with occasional travel"]},
+      {id:"loc_base",type:"radio",req:true,label:"Where the resources should be based",
+       opts:["India","United States","Either works","Other, we will specify"]},
+      {id:"loc_zone",type:"radio",req:true,label:"Your core time zone",
+       opts:["US Eastern","US Central","US Mountain","US Pacific","United Kingdom","Central Europe","Other"]},
+      {id:"loc_overlap",type:"radio",req:true,label:"Required overlap with your team",
+       opts:["Two hours","Three to four hours","Five to six hours","Full overlap with your working day","No fixed overlap, async is fine"]},
+      {id:"loc_meetings",type:"chips",label:"Meeting rhythm you expect",
+       opts:["Daily standup","Twice weekly check in","Weekly review","Fortnightly review","Monthly steering","Ad hoc as needed"]},
+      {id:"loc_oncall",type:"radio",label:"Weekend or on call expectation",
+       opts:["None","Occasional, during go live only","Rotational on call","Regular weekend coverage needed"]}
+    ]
+  },
+  {
+    id:"time", title:"Timeline",
+    sub:"When you need people working, and what is driving that date.",
+    fields:[
+      {id:"time_start",type:"radio",req:true,label:"Target onboarding",
+       opts:["Immediate","Within two weeks","Within thirty days","Within sixty days","Within ninety days","Not urgent yet"]},
+      {id:"time_driver",type:"chips",req:true,label:"What is driving the date",
+       opts:["A go live date","Contract start","Peak season","Budget cycle","Board or leadership commitment","An existing resource leaving","A customer commitment","No hard driver"]},
+      {id:"time_process",type:"radio",req:true,label:"How you want to assess candidates",
+       opts:["One technical round","Two technical rounds","Technical round plus a business conversation","Technical round plus a take home task","Panel interview","Prowesstics screens, you meet the finalist"]},
+      {id:"time_speed",type:"radio",label:"How fast you can move on a shortlist",
+       opts:["Within two days","Within a week","Within two weeks","Depends on availability"]}
+    ]
+  },
+  {
+    id:"comm", title:"Commercials",
+    sub:"Enough guidance for us to source against the right band. Nothing is fixed at this stage.",
+    fields:[
+      {id:"comm_band",type:"radio",req:true,label:"Budget position",
+       opts:["We have an approved rate band","We have a working range, not yet approved","We would prefer a market aligned proposal from Prowesstics","Budget depends on the profile we see"]},
+      {id:"comm_unit",type:"radio",req:true,label:"How you want it priced",
+       opts:["Per hour","Per day","Per month","Fixed fee for the project","Outcome based","Not decided yet"]},
+      {id:"comm_currency",type:"radio",label:"Currency",opts:["USD","EUR","GBP","INR","Other"]},
+      {id:"comm_priority",type:"chips",req:true,label:"What matters most commercially",
+       opts:["Lowest rate","Predictable monthly cost","Ability to scale up or down","Fast start","Quality over cost","Fixed outcome pricing","Single invoice for both profiles"]},
+      {id:"comm_approval",type:"radio",label:"Approval route",
+       opts:["Andrew approves","Department head","Procurement","Finance committee","Not decided yet"]},
+      {id:"comm_range",type:"text",label:"Range, if you have one",ph:"Optional. For example 60 to 75 per hour."}
+    ]
+  },
+  { id:"review", title:"Review and send", sub:"Check the open items, then send the requirement to Prowesstics.", review:true }
+];
+
+/* ---------- State ---------- */
+const API = "/api";
+let TOKEN = null, ME = null, role = "client";
+let REC = {email:"", name:"", answers:{}, rows:[], meta:{}};
+let SHARED = {recommendations:{}, notes:{}};
+let ADMIN_RECORDS = [];
+let current = 0, saveTimer = null;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const key = (sec,f) => sec + "." + f;
+
+function A(){ if(!REC.answers) REC.answers = {}; return REC.answers; }
+function M(){ if(!REC.meta) REC.meta = {}; return REC.meta; }
+const isLocked = () => !!M().locked;
+const canEdit = () => !isLocked() || role === "prowesstics";
+
+function logEvent(action){
+  if(!Array.isArray(M().log)) M().log = [];
+  M().log.push({action, at:new Date().toISOString(), by:role});
+}
+function seedDefaults(){
+  const ans = A();
+  SECTIONS.forEach(sec=>{
+    (sec.fields||[]).forEach(f=>{
+      if(f.def !== undefined && ans[key(sec.id,f.id)] === undefined) ans[key(sec.id,f.id)] = String(f.def);
+    });
+  });
+}
+
+async function api(path, opts){
+  opts = opts || {};
+  const headers = Object.assign({"content-type":"application/json"}, opts.headers || {});
+  if(TOKEN) headers.authorization = "Bearer " + TOKEN;
+  const res = await fetch(API + path, Object.assign({}, opts, {headers}));
+  if(!res.ok){
+    let msg = "Request failed";
+    try{ msg = (await res.json()).error || msg; }catch(e){}
+    const err = new Error(msg); err.status = res.status; throw err;
+  }
+  return res.json();
+}
+
+/* ---------- Sync ---------- */
+function setSync(state, text){
+  const dot = $("#syncDot"), t = $("#syncText");
+  dot.className = "dot" + (state==="saving" ? " saving" : state==="offline" ? " offline" : "");
+  t.textContent = text;
+}
+function queueSave(){
+  if(!TOKEN) return;
+  setSync("saving","Saving");
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveNow, 900);
+}
+async function saveNow(){
+  try{
+    REC.rows = qaRows(A());
+    const r = await api("/data", {method:"PUT", body:JSON.stringify(
+      {email:REC.email, name:REC.name, answers:A(), rows:REC.rows, meta:M()})});
+    setSync("ok","Saved " + new Date(r.updatedAt).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}));
+  }catch(e){
+    setSync("offline", e.status === 401 ? "Session expired, sign in again" : "Not saved");
+  }
+}
+async function saveShared(){
+  if(role !== "prowesstics") return;
+  try{ await api("/data?scope=shared", {method:"PUT", body:JSON.stringify(SHARED)}); setSync("ok","Saved"); }
+  catch(e){ setSync("offline","Not saved"); }
+}
+async function loadAdminRecords(){
+  try{ ADMIN_RECORDS = (await api("/data?scope=all")).records || []; }
+  catch(e){ ADMIN_RECORDS = []; }
+}
+
+/* ---------- Completion ---------- */
+function fieldFilled(sec,f){
+  const v = A()[key(sec.id,f.id)];
+  if(f.type==="chips") return Array.isArray(v) && v.length>0;
+  if(f.type==="number") return v!==undefined && v!=="" && v!==null;
+  return v!==undefined && String(v).trim()!=="";
+}
+function secStatus(sec){
+  if(sec.review) return "n/a";
+  const mats = sec.matrices || (sec.matrix?[sec.matrix]:null);
+  if(mats){
+    let total=0,set=0;
+    mats.forEach(m=>{ total+=m.rows.length; m.rows.forEach((r,i)=>{ if(A()[m.id+"."+i]) set++; }); });
+    return set===0?"none":set===total?"done":"part";
+  }
+  const req = sec.fields.filter(f=>f.req);
+  const done = req.filter(f=>fieldFilled(sec,f)).length;
+  const any = sec.fields.some(f=>fieldFilled(sec,f));
+  if(done===req.length && req.length>0) return "done";
+  return any?"part":"none";
+}
+function overall(){
+  const real = SECTIONS.filter(s=>!s.review);
+  const done = real.filter(s=>secStatus(s)==="done").length;
+  return {done, total:real.length, pct:Math.round(done/real.length*100)};
+}
+
+/* ---------- Rail ---------- */
+function renderRail(){
+  const nav = $("#navList");
+  nav.innerHTML = SECTIONS.map((s,i)=>{
+    const st = secStatus(s);
+    const cls = st==="done"?"done":st==="part"?"part":"";
+    const num = String(i+1).padStart(2,"0");
+    return `<li><button class="nav-item ${i===current?"active":""}" data-i="${i}">
+      <span class="nav-num">${num}</span>
+      <span class="nav-label">${esc(s.title)}</span>
+      <span class="nav-state ${cls}"></span>
+    </button></li>`;
+  }).join("");
+  nav.querySelectorAll(".nav-item").forEach(b=>{
+    b.onclick = ()=>{ current = +b.dataset.i; render(); window.scrollTo({top:0,behavior:"smooth"}); };
+  });
+
+  const o = overall();
+  $("#gaugeValue").textContent = o.pct + "%";
+  $("#gaugeBar").innerHTML = SECTIONS.filter(s=>!s.review)
+    .map(s=>`<span class="gauge-seg ${secStatus(s)==="done"?"on":""}"></span>`).join("");
+  $("#gaugeNote").textContent = o.done===0
+    ? "Nothing answered yet"
+    : o.done + " of " + o.total + " sections complete";
+}
+
+/* ---------- Field rendering ---------- */
+function fieldHTML(sec,f){
+  const k = key(sec.id,f.id);
+  const v = A()[k];
+  const hint = f.type==="chips" ? "Select all that apply"
+             : f.type==="radio" ? "Choose one"
+             : f.type==="textarea" || f.type==="text" ? "" : "";
+  const lab = `<label class="f-label" for="fld-${k}">${esc(f.label)}${f.req?'<span class="req">Required</span>':''}</label>`
+    + (f.help?`<div class="f-help">${esc(f.help)}</div>`:"")
+    + (hint?`<div class="f-hint">${hint}</div>`:"");
+  let body="";
+  if(f.type==="textarea"){
+    body = `<textarea id="fld-${k}" data-k="${k}" ${canEdit()?"":"readonly"} placeholder="${esc(f.ph||"")}">${esc(v||"")}</textarea>`;
+  } else if(f.type==="text"){
+    body = `<input type="text" id="fld-${k}" data-k="${k}" ${canEdit()?"":"readonly"} value="${esc(v||"")}" placeholder="${esc(f.ph||"")}" />`;
+  } else if(f.type==="number"){
+    body = `<input type="number" min="0" id="fld-${k}" data-k="${k}" value="${v!==undefined?esc(v):(f.def!==undefined?f.def:"")}" />`;
+  } else if(f.type==="radio"){
+    body = `<div class="opts">` + f.opts.map(o=>
+      `<button class="opt ${v===o?"sel":""}" data-k="${k}" data-v="${esc(o)}" role="radio" aria-checked="${v===o}">
+        <span class="opt-mark"></span><span class="opt-text">${esc(o)}</span></button>`).join("") + `</div>`;
+  } else if(f.type==="chips"){
+    const arr = Array.isArray(v)?v:[];
+    body = `<div class="chips">` + f.opts.map(o=>
+      `<button class="chip ${arr.includes(o)?"on":""}" data-k="${k}" data-v="${esc(o)}" aria-pressed="${arr.includes(o)}">${esc(o)}</button>`).join("") + `</div>`;
+  }
+  return `<div class="field">${lab}${body}</div>`;
+}
+
+function matrixHTML(m){
+  const labels = m.labels || {must:"Must have",preferred:"Preferred",no:"Not needed"};
+  const twoCol = !!m.noRec;
+  const rows = m.rows.map((row,i)=>{
+    const k = m.id + "." + i;
+    const val = A()[k];
+    const triCell = `<div class="tri">` + ["must","preferred","no"].map(x=>
+      `<button data-v="${x}" class="${val===x?"on":""}" data-mk="${k}" aria-pressed="${val===x}">${labels[x]}</button>`).join("") + `</div>`;
+    if(twoCol){
+      return `<div class="mx-row two"><div class="mx-skill">${esc(row[0])}</div>${triCell}</div>`;
+    }
+    const rec = SHARED.recommendations[k] || row[1];
+    const recCell = role==="prowesstics"
+      ? `<div class="tri" data-rec="${k}">` + ["must","preferred","no"].map(x=>
+          `<button data-v="${x}" class="${rec===x?"on":""}" data-rk="${k}">${labels[x]}</button>`).join("") + `</div>`
+      : `<span class="mx-rec ${rec}">${labels[rec]}</span>`;
+    return `<div class="mx-row"><div class="mx-skill">${esc(row[0])}</div><div>${recCell}</div>${triCell}</div>`;
+  }).join("");
+
+  let must=0,pref=0,no=0,unset=0;
+  m.rows.forEach((r,i)=>{
+    const v = A()[m.id+"."+i];
+    if(v==="must")must++;else if(v==="preferred")pref++;else if(v==="no")no++;else unset++;
+  });
+  const t = m.rows.length;
+  const comp = `<div class="composition">
+    <div class="comp-bar">
+      <span class="comp-seg" style="width:${must/t*100}%;background:var(--gold)"></span>
+      <span class="comp-seg" style="width:${pref/t*100}%;background:var(--teal)"></span>
+      <span class="comp-seg" style="width:${no/t*100}%;background:#8FA0B6"></span>
+    </div>
+    <div class="comp-legend"><b>${must}</b> ${esc(labels.must.toLowerCase())} &nbsp;&middot;&nbsp; <b>${pref}</b> ${esc(labels.preferred.toLowerCase())} &nbsp;&middot;&nbsp; <b>${no}</b> ${esc(labels.no.toLowerCase())} &nbsp;&middot;&nbsp; <b>${unset}</b> open</div>
+  </div>`;
+
+  const head = twoCol
+    ? `<div class="mx-head two"><span>Responsibility as you wrote it</span><span>Your confirmation</span></div>`
+    : `<div class="mx-head"><span>Capability</span><span>${role==="prowesstics"?"Our recommendation, editable":"Prowesstics recommends"}</span><span>Your position</span></div>`;
+
+  return (m.head?`<div class="mx-title">${esc(m.head)}</div>`:"")
+    + `<div class="matrix">${head}${rows}</div>${comp}`;
+}
+
+/* ---------- Internal panel ---------- */
+function internalHTML(sec){
+  if(role!=="prowesstics") return "";
+  const note = SHARED.notes[sec.id] || "";
+  let extra = "";
+
+  if(sec.id==="eng"){
+    const model = A()["eng.eng_model"];
+    const map = {
+      "Full time dedicated":"Dedicated resource model. Price per resource per month, with a review point at the end of the initial term.",
+      "Part time":"Part time model. Price on committed hours, and hold a minimum monthly commitment.",
+      "Contract for a defined project":"Project or contract model. Scope, milestones and acceptance need to be written before pricing.",
+      "Staff augmentation":"Staff augmentation. Rate card per profile, and no delivery ownership on our side.",
+      "Managed service, outcome owned by Prowesstics":"Managed delivery. We own the outcome, so price the capability and not the headcount."
+    };
+    const dur = A()["eng.eng_duration"];
+    const durNote = dur==="Not decided yet"
+      ? "Duration is open. Propose an initial term with a review and extension mechanism."
+      : dur ? "Term stated as " + dur + ". Build the rate against that term." : "";
+    extra = `<div class="i-tree"><b>Model read:</b> ${esc(model ? (map[model]||"") : "Waiting on the client answer.")}${durNote?" "+esc(durNote):""}</div>`;
+  }
+
+  if(sec.id==="review"){
+    const recs = allRecords();
+    const rows = recs.map(r=>{
+      const pct = pctFor(r.answers);
+      const sub = r.meta && r.meta.submittedAt ? new Date(r.meta.submittedAt).toLocaleString() : (r.started ? "In progress" : "Not started");
+      const lock = r.meta && r.meta.locked ? "Locked" : "Open";
+      const on = r.id === String(REC.email||"").toLowerCase();
+      return `<tr${on?' style="background:rgba(232,180,82,.08);"':''}>
+        <td style="padding:11px 8px 11px 10px;border-bottom:1px solid rgba(255,255,255,.09);">
+          <div style="color:#fff;font-weight:600;">${esc(r.name)}${on?' <span style="color:var(--gold);font-size:11px;letter-spacing:.1em;">OPEN NOW</span>':''}</div>
+          <div style="color:#98A8C2;font-size:12px;">${esc(r.company)} &middot; ${esc(r.email)}</div>
+        </td>
+        <td style="padding:11px 8px;border-bottom:1px solid rgba(255,255,255,.09);color:var(--gold);font-variant-numeric:tabular-nums;">${pct}%</td>
+        <td style="padding:11px 8px;border-bottom:1px solid rgba(255,255,255,.09);color:#98A8C2;font-size:12px;">${esc(sub)}<br>${lock}</td>
+        <td style="padding:11px 10px 11px 8px;border-bottom:1px solid rgba(255,255,255,.09);text-align:right;white-space:nowrap;">
+          <button class="btn btn-ghost" style="height:30px;padding:0 11px;font-size:12px;" data-open-rec="${r.id}">Open</button>
+          <button class="btn btn-gold" style="height:30px;padding:0 11px;font-size:12px;margin-left:6px;" data-report="${r.id}">Report</button>
+          <button class="btn btn-ghost" style="height:30px;padding:0 11px;font-size:12px;margin-left:6px;" data-xls="${r.email}">Excel</button>
+        </td>
+      </tr>`;
+    }).join("");
+
+    extra = `<div style="margin-top:18px;">
+      <label class="f-label">Recorded responses</label>
+      <p class="i-note" style="margin:6px 0 12px;">Everyone you have issued access to. Open loads their answers into this view. Report gives a formatted question and answer document, CSV gives the same as a spreadsheet.</p>
+      <table style="width:100%;border-collapse:collapse;font-size:13.5px;">${rows}</table>
+      <div class="footnav" style="margin-top:18px;">
+        <button class="btn btn-gold" id="dlAllXls">Download all responses, Excel</button>
+        <button class="btn btn-ghost" id="refreshReg">Refresh register</button>
+      </div>
+    </div>`;
+  }
+
+  if(sec.id==="comm"){
+    const c = INTERNAL;
+    const cost = parseFloat(c.cost)||0;
+    const margin = parseFloat(c.margin)||0;
+    const rate = cost>0 ? cost/(1-margin/100) : 0;
+    extra = `
+      <div class="i-grid">
+        <div><label class="f-label">Candidate cost</label><input type="text" id="i-cost" value="${esc(c.cost||"")}" placeholder="per month" /></div>
+        <div><label class="f-label">Target margin, percent</label><input type="text" id="i-margin" value="${esc(c.margin||"")}" placeholder="35" /></div>
+        <div><label class="f-label">Profile</label><input type="text" id="i-profile" value="${esc(c.profile||"")}" placeholder="Optimization or Applied AI" /></div>
+      </div>
+      <div class="i-out"><div class="k">Indicative client rate</div><div class="v">${rate>0?rate.toFixed(0):"Set cost and margin"}</div></div>
+      <div class="i-tree">Price the two profiles separately. They are different talent markets. Do not quote before scope, seniority, engagement and duration are all confirmed.</div>`;
+  }
+
+  return `<div class="internal">
+    <h3>Prowesstics only</h3>
+    <p class="i-note">${sec.id==="comm"
+      ? "This worksheet stays in this browser and is never written to the shared record."
+      : "Working notes for this section. Shared with the Prowesstics team, not with the client."}</p>
+    <label class="f-label" for="note-${sec.id}">Internal note</label>
+    <textarea id="note-${sec.id}" data-note="${sec.id}" placeholder="What we heard, what is still assumed, what to chase.">${esc(note)}</textarea>
+    ${extra}
+  </div>`;
+}
+
+function commentHTML(sec){
+  const k = "notes." + sec.id;
+  const v = A()[k] || "";
+  return `<div class="card comment-card">
+    <label class="f-label" for="fld-${k}">Your own words on ${esc(sec.title.toLowerCase())}</label>
+    <div class="f-hint">Free text, optional</div>
+    <textarea id="fld-${k}" data-k="${k}" ${canEdit()?"":"readonly"} placeholder="Anything the buttons do not cover. Detail, exceptions, context, questions back to us.">${esc(v)}</textarea>
+  </div>`;
+}
+
+/* ---------- Responses and export ---------- */
+function pctFor(ans){
+  const real = SECTIONS.filter(x=>!x.review);
+  let done = 0;
+  real.forEach(x=>{
+    const mats = x.matrices || (x.matrix?[x.matrix]:null);
+    if(mats){
+      let t=0,c=0;
+      mats.forEach(m=>{ t+=m.rows.length; m.rows.forEach((r,i)=>{ if(ans[m.id+"."+i]) c++; }); });
+      if(t && t===c) done++;
+    } else {
+      const req = (x.fields||[]).filter(f=>f.req);
+      if(req.length && req.every(f=>{
+        const v = ans[x.id+"."+f.id];
+        return f.type==="chips" ? (Array.isArray(v)&&v.length>0) : (v!==undefined && String(v).trim()!=="");
+      })) done++;
+    }
+  });
+  return Math.round(done/real.length*100);
+}
+
+function allRecords(){
+  return (ADMIN_RECORDS || []).map(r=>({
+    id: String(r.email||"").toLowerCase(),
+    name: r.name || r.email,
+    email: r.email || "",
+    company: (String(r.email||"").split("@")[1] || "").replace(/\.[a-z.]+$/i,""),
+    answers: r.answers || {},
+    meta: r.meta || {},
+    rows: r.rows || [],
+    updatedAt: r.updatedAt,
+    started: !!(r.answers && Object.keys(r.answers).length)
+  }));
+}
+
+function qaRows(ans){
+  const rows = [];
+  SECTIONS.forEach(sec=>{
+    const mats = sec.matrices || (sec.matrix?[sec.matrix]:null);
+    if(mats) mats.forEach(m=>{
+      const labels = m.labels || {must:"Must have",preferred:"Preferred",no:"Not needed"};
+      m.rows.forEach((r,i)=>{
+        rows.push({section: sec.title + (m.head ? " / " + m.head : ""), q:r[0],
+                   a: labels[ans[m.id+"."+i]] || "Not answered"});
+      });
+    });
+    (sec.fields||[]).forEach(f=>{
+      const v = ans[sec.id+"."+f.id];
+      let a = "Not answered";
+      if(Array.isArray(v)) a = v.length ? v.join("; ") : "Not answered";
+      else if(v!==undefined && String(v).trim()!=="") a = String(v);
+      rows.push({section:sec.title, q:f.label, a});
+    });
+    const n = ans["notes."+sec.id];
+    if(n && String(n).trim()!=="") rows.push({section:sec.title, q:"Free text note", a:String(n)});
+  });
+  return rows;
+}
+
+function slug(t){ return String(t).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""); }
+function saveBlob(content, type, filename){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([content],{type}));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function downloadReport(rec){
+  const rows = qaRows(rec.answers);
+  const pct = pctFor(rec.answers);
+  const sub = rec.meta && rec.meta.submittedAt ? new Date(rec.meta.submittedAt).toLocaleString() : "Not submitted";
+  let body = "", last = "";
+  rows.forEach(r=>{
+    if(r.section !== last){ body += '<h2>' + esc(r.section) + '</h2>'; last = r.section; }
+    const unanswered = r.a === "Not answered";
+    body += '<div class="qa' + (unanswered?' open':'') + '"><div class="q">' + esc(r.q) + '</div><div class="a">' + esc(r.a) + '</div></div>';
+  });
+  const doc = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Requirement, ' + esc(rec.name) + '</title>'
+    + '<style>body{font-family:"Avenir Next",Avenir,Calibri,Helvetica,Arial,sans-serif;color:#000;max-width:860px;margin:40px auto;padding:0 24px;line-height:1.55;}'
+    + 'header{border-bottom:3px solid #E8B452;padding-bottom:18px;margin-bottom:28px;}'
+    + '.brand{font-size:11px;letter-spacing:.19em;text-transform:uppercase;color:#0A1F44;font-weight:600;}'
+    + 'h1{font-size:27px;margin:10px 0 4px;letter-spacing:-.02em;font-weight:500;}'
+    + '.meta{font-size:13px;color:#000;}.meta span{margin-right:18px;}'
+    + 'h2{font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:#0A1F44;margin:32px 0 12px;padding-bottom:7px;border-bottom:1px solid #E2E7EF;}'
+    + '.qa{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:9px 0;border-bottom:1px solid #F0F2F6;break-inside:avoid;}'
+    + '.q{font-size:13.5px;}.a{font-size:13.5px;font-weight:600;}'
+    + '.qa.open .a{font-weight:400;color:#8A94A6;font-style:italic;}'
+    + 'footer{margin-top:34px;padding-top:16px;border-top:1px solid #E2E7EF;font-size:11.5px;color:#000;}'
+    + '@media print{body{margin:0;}}</style></head><body>'
+    + '<header><div class="brand">Prowesstics &middot; Resource Requirement Definition</div>'
+    + '<h1>' + esc(rec.name) + '</h1>'
+    + '<div class="meta"><span>' + esc(rec.company) + '</span><span>Completion ' + pct + '%</span><span>Submitted ' + esc(sub) + '</span></div></header>'
+    + body
+    + '<footer>Generated ' + esc(new Date().toLocaleString()) + '. Optimization and Operations Research, and Applied AI Solution Development.</footer>'
+    + '</body></html>';
+  saveBlob(doc, "text/html", "requirement-" + slug(rec.name) + "-" + new Date().toISOString().slice(0,10) + ".html");
+}
+
+function csvCell(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }
+async function downloadExcel(email){
+  try{
+    setSync("saving","Building Excel");
+    const res = await fetch(API + "/export" + (email ? "?email=" + encodeURIComponent(email) : ""),
+                            {headers:{authorization:"Bearer " + TOKEN}});
+    if(!res.ok){
+      let m = "Export failed";
+      try{ m = (await res.json()).error || m; }catch(e){}
+      setSync("ok","Ready"); toast(m); return;
+    }
+    const blob = await res.blob();
+    const cd = res.headers.get("content-disposition") || "";
+    const match = cd.match(/filename="([^"]+)"/);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = match ? match[1] : "requirement-responses.xlsx";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setSync("ok","Ready");
+    toast("Excel downloaded");
+  }catch(e){ setSync("ok","Ready"); toast("Export failed"); }
+}
+
+function downloadCSV(rec){
+  const rows = qaRows(rec.answers);
+  const out = ["Respondent,Company,Section,Question,Answer"];
+  rows.forEach(r=> out.push([rec.name, rec.company, r.section, r.q, r.a].map(csvCell).join(",")));
+  saveBlob(out.join("\n"), "text/csv", "requirement-" + slug(rec.name) + "-" + new Date().toISOString().slice(0,10) + ".csv");
+}
+/* ---------- Review ---------- */
+const MUST_ITEMS = [
+  ["Optimization responsibilities confirmed", ()=>BRIEF_OPT.every((r,i)=>!!A()["brief_opt."+i])],
+  ["Applied AI responsibilities confirmed", ()=>BRIEF_AI.every((r,i)=>!!A()["brief_ai."+i])],
+  ["Number of resources", ()=>A()["eng.eng_count_opt"]!==undefined && A()["eng.eng_count_ai"]!==undefined],
+  ["Optimization use case", ()=>!!A()["opt.opt_cases"]],
+  ["Applied AI use case", ()=>!!A()["ai.ai_cases"]],
+  ["Transportation and logistics scope for the AI role", ()=>!!A()["ai.ai_domain"]],
+  ["Optimization mandatory skills", ()=>OPT_SKILLS.every((r,i)=>!!A()["mx_opt."+i])],
+  ["Applied AI mandatory skills", ()=>AI_SKILLS.every((r,i)=>!!A()["mx_ai."+i])],
+  ["Technology environment", ()=>["tech.tech_cloud","tech.tech_eng"].some(k=>(A()[k]||[]).length>0)],
+  ["Experience requirement", ()=>!!A()["exp.exp_years"]],
+  ["Experience priority", ()=>!!A()["exp.exp_priority"]],
+  ["Team structure", ()=>!!A()["team.team_model"]],
+  ["Reporting and technical direction", ()=>!!A()["team.team_direction"]],
+  ["Engagement model", ()=>!!A()["eng.eng_model"]],
+  ["Duration", ()=>!!A()["eng.eng_duration"]],
+  ["Location", ()=>!!A()["loc.loc_base"]],
+  ["Time zone overlap", ()=>!!A()["loc.loc_overlap"]],
+  ["Start date", ()=>!!A()["time.time_start"]],
+  ["Commercial guidance", ()=>!!A()["comm.comm_band"]]
+];
+
+function reviewHTML(){
+  const rows = MUST_ITEMS.map(([label,fn])=>{
+    const ok = fn();
+    return `<li><span class="st ${ok?"ok":"open"}">${ok?"Answered":"Open"}</span><span>${esc(label)}</span></li>`;
+  }).join("");
+  const open = MUST_ITEMS.filter(([l,f])=>!f()).length;
+
+  const logItems = (M().log||[]).map(e=>
+    `<li>${esc(new Date(e.at).toLocaleString())} &nbsp;&middot;&nbsp; ${esc(e.action)}</li>`).join("");
+  const logCard = logItems ? `<div class="card">
+    <div class="f-label">History</div>
+    <div class="f-help">Every submission and reopening on this requirement.</div>
+    <ul class="audit-log">${logItems}</ul>
+  </div>` : "";
+
+  const actions = isLocked()
+    ? `<div class="card">
+        <div class="f-label">This requirement is locked</div>
+        <div class="f-help">Nothing can be changed until it is reopened. Reopening keeps every answer exactly as it is, so you only edit what you want to change, then lock it again.</div>
+        <div class="footnav">
+          <button class="btn btn-gold" id="reopenBtn2">Reopen for editing</button>
+          <button class="btn btn-ghost" id="myReportBtn">Download my responses</button>
+          <button class="btn btn-ghost" id="printBtn">Print</button>
+        </div>
+      </div>`
+    : `<div class="card">
+        <div class="f-label">${M().submittedAt?"Lock it again":"Submit and lock"}</div>
+        <div class="f-help">This sends your answers to Prowesstics and locks the form so nothing changes by accident. You can reopen it with your access code at any time if you spot something to correct. We will build the two job descriptions and skill matrices from this and send them back for your validation before any sourcing starts.</div>
+        <div class="footnav">
+          <button class="btn btn-gold" id="submitBtn">${M().submittedAt?"Lock it again":"Submit and lock"}</button>
+          <button class="btn btn-ghost" id="myReportBtn">Download my responses</button>
+          <button class="btn btn-ghost" id="printBtn">Print</button>
+        </div>
+      </div>`;
+
+  return `<div class="card">
+    <div class="f-label">Requirement checklist</div>
+    <div class="f-help">${open===0?"Everything we need is answered.":open+" item"+(open===1?"":"s")+" still open. You can still submit, and we will cover the rest on the call."}</div>
+    <ul class="audit" style="margin-top:18px;">${rows}</ul>
+  </div>
+  ${actions}
+  ${logCard}`;
+}
+
+/* ---------- Main render ---------- */
+function whoBanner(){
+  if(role === "prowesstics"){
+    const r = allRecords().find(x=>x.id === String(REC.email||"").toLowerCase());
+    if(!r) return "";
+    return `<div class="lockbar"><div class="lb-text"><b>Viewing ${esc(r.name)}</b> at ${esc(r.company)}, ${esc(r.email)}. Their answers, read and edit. Switch record from the register on section 14.</div></div>`;
+  }
+  return "";
+}
+
+function lockbarHTML(){
+  if(!isLocked()) return "";
+  const when = M().submittedAt ? new Date(M().submittedAt).toLocaleString() : "";
+  return `<div class="lockbar">
+    <div class="lb-text"><b>Submitted and locked.</b> Sent to Prowesstics on ${esc(when)}. Your answers are saved exactly as you left them. To change anything, reopen with your access code.</div>
+    <button class="btn btn-gold" id="reopenBtn">Reopen for editing</button>
+  </div>`;
+}
+
+function render(){
+  const sec = SECTIONS[current];
+  const num = String(current+1).padStart(2,"0");
+  let inner = "";
+  if(sec.review) inner = reviewHTML();
+  else if(sec.matrices) inner = sec.matrices.map(m=>`<div class="card">${matrixHTML(m)}</div>`).join("");
+  else if(sec.matrix) inner = `<div class="card">${matrixHTML(sec.matrix)}</div>`;
+  else inner = `<div class="card">${sec.fields.map(f=>fieldHTML(sec,f)).join("")}</div>`;
+
+  $("#main").className = "main" + (isLocked() && role!=="prowesstics" ? " is-locked" : "");
+  $("#main").innerHTML = `
+    ${whoBanner()}
+    ${lockbarHTML()}
+    <div class="crumb">Section ${num} of ${String(SECTIONS.length).padStart(2,"0")}</div>
+    <h2 class="sec-title">${esc(sec.title)}</h2>
+    <p class="sec-sub">${esc(sec.sub)}</p>
+    ${sec.intro?`<div class="source-note">${esc(sec.intro)}</div>`:""}
+    <div class="rule"></div>
+    ${inner}
+    ${commentHTML(sec)}
+    ${internalHTML(sec)}
+    <div class="footnav">
+      <button class="btn btn-ghost" id="prevBtn" ${current===0?"disabled":""}>Back</button>
+      <button class="btn btn-primary" id="nextBtn" ${current===SECTIONS.length-1?"disabled":""}>Next section</button>
+      <span class="footnote">Answers save as you type</span>
+    </div>`;
+
+  bind();
+  renderRail();
+}
+
+function bind(){
+  if(canEdit()) document.querySelectorAll("[data-k]").forEach(el=>{
+    const k = el.dataset.k;
+    if(el.tagName==="TEXTAREA" || el.tagName==="INPUT"){
+      el.oninput = ()=>{
+        A()[k] = el.type==="number" ? el.value : el.value;
+        queueSave(); renderRail();
+      };
+    } else if(el.classList.contains("opt")){
+      el.onclick = ()=>{ A()[k] = el.dataset.v; queueSave(); render(); };
+    } else if(el.classList.contains("chip")){
+      el.onclick = ()=>{
+        const arr = Array.isArray(A()[k]) ? A()[k].slice() : [];
+        const v = el.dataset.v;
+        const i = arr.indexOf(v);
+        if(i>=0) arr.splice(i,1); else arr.push(v);
+        A()[k] = arr;
+        queueSave(); render();
+      };
+    }
+  });
+  if(canEdit()) document.querySelectorAll("[data-mk]").forEach(b=>{
+    b.onclick = ()=>{ A()[b.dataset.mk] = b.dataset.v; queueSave(); render(); };
+  });
+  document.querySelectorAll("[data-rk]").forEach(b=>{
+    b.onclick = ()=>{ SHARED.recommendations[b.dataset.rk] = b.dataset.v; queueSave(); render(); };
+  });
+  document.querySelectorAll("[data-note]").forEach(t=>{
+    t.oninput = ()=>{ SHARED.notes[t.dataset.note] = t.value; queueSave(); };
+  });
+  ["cost","margin","profile"].forEach(f=>{
+    const el = document.getElementById("i-"+f);
+    if(el) el.oninput = ()=>{ INTERNAL[f] = el.value; if(f!=="profile") render(); };
+  });
+
+  const p=$("#prevBtn"), n=$("#nextBtn");
+  if(p) p.onclick = ()=>{ current--; render(); window.scrollTo({top:0,behavior:"smooth"}); };
+  if(n) n.onclick = ()=>{ current++; render(); window.scrollTo({top:0,behavior:"smooth"}); };
+
+  document.querySelectorAll("[data-open-rec]").forEach(b=>{
+    b.onclick = ()=>{
+      const r = ADMIN_RECORDS.find(x=>String(x.email).toLowerCase() === b.dataset.openRec);
+      if(r){ REC = r; current = 0; setRole("prowesstics"); toast("Opened " + (r.name || r.email)); }
+      window.scrollTo({top:0,behavior:"smooth"});
+    };
+  });
+  document.querySelectorAll("[data-report]").forEach(b=>{
+    b.onclick = ()=>{
+      const rec = allRecords().find(r=>r.id===b.dataset.report);
+      if(rec){ downloadReport(rec); toast("Report downloaded"); }
+    };
+  });
+  document.querySelectorAll("[data-xls]").forEach(b=>{
+    b.onclick = ()=> downloadExcel(b.dataset.xls);
+  });
+  const dax=$("#dlAllXls"); if(dax) dax.onclick = ()=> downloadExcel("");
+  const rf=$("#refreshReg"); if(rf) rf.onclick = async ()=>{ await loadAdminRecords(); render(); toast("Register refreshed"); };
+
+  ["reopenBtn","reopenBtn2"].forEach(id=>{
+    const rb=document.getElementById(id);
+    if(rb) rb.onclick = ()=>{ pinPurpose = "reopen"; openPin(); };
+  });
+
+  const sb=$("#submitBtn");
+  if(sb) sb.onclick = ()=>{
+    M().submittedAt = new Date().toISOString();
+    M().locked = true;
+    logEvent("submitted and locked");
+    queueSave();
+    toast("Submitted and locked");
+    current = SECTIONS.length - 1;
+    render();
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
+  const mrb=$("#myReportBtn");
+  if(mrb) mrb.onclick = ()=>{
+    downloadReport({name:REC.name || REC.email, company:REC.email, answers:A(), meta:M()});
+    toast("Your responses downloaded");
+  };
+  const pb=$("#printBtn");
+  if(pb) pb.onclick = ()=>window.print();
+}
+
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(STATE,null,2)],{type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "resource-requirement-" + new Date().toISOString().slice(0,10) + ".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("Copy downloaded");
+}
+
+function toast(msg){
+  const t=$("#toast"); t.textContent=msg; t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"),2600);
+}
+
+/* ---------- Access ---------- */
+function setRole(r){
+  role = r;
+  const b = $("#roleBtn");
+  if(r === "prowesstics"){
+    b.textContent = REC.email ? "Viewing " + (REC.name || REC.email) : "Prowesstics view";
+    b.className = "pill role-internal";
+  } else {
+    b.textContent = ME ? ME.name : "Signed in";
+    b.className = "pill role-client";
+  }
+  render();
+}
+function openPin(){
+  $("#pinTitle").textContent = "Reopen for editing";
+  $("#pinBody").textContent = "Enter your access code to unlock the form. Every answer stays exactly as it is.";
+  $("#pinGo").textContent = "Unlock and edit";
+  $("#pinVeil").classList.add("show");
+  setTimeout(()=>$("#pinInput").focus(),50);
+}
+$("#roleBtn").onclick = async ()=>{
+  if(role !== "prowesstics") return;
+  await loadAdminRecords();
+  render();
+  toast("Register refreshed");
+};
+$("#pinCancel").onclick = closePin;
+$("#pinGo").onclick = tryPin;
+$("#pinInput").onkeydown = e => { if(e.key==="Enter") tryPin(); };
+
+async function tryPin(){
+  const v = $("#pinInput").value.trim();
+  try{
+    const res = await fetch(API + "/auth", {method:"POST", headers:{"content-type":"application/json"},
+      body: JSON.stringify({email:(ME && ME.email) || REC.email, pin:v})});
+    if(!res.ok) throw new Error("bad code");
+    M().locked = false;
+    logEvent("reopened for editing");
+    queueSave();
+    closePin();
+    toast("Unlocked. Edit anything, then lock it again.");
+    render();
+  }catch(e){ $("#pinErr").classList.add("show"); }
+}
+function closePin(){
+  $("#pinVeil").classList.remove("show");
+  $("#pinInput").value = "";
+  $("#pinErr").classList.remove("show");
+}
+
+/* ---------- Sign in ---------- */
+async function tryGate(){
+  const email = $("#gateEmail").value.trim();
+  const pin   = $("#gateInput").value.trim();
+  const btn   = $("#gateGo");
+  $("#gateErr").classList.remove("show");
+  btn.textContent = "Signing in"; btn.disabled = true;
+  try{
+    const auth = await api("/auth", {method:"POST", body:JSON.stringify({email, pin})});
+    TOKEN = auth.token;
+    ME = {email:auth.email, name:auth.name, role:auth.role};
+    role = auth.role;
+    try{ SHARED = await api("/data?scope=shared"); }catch(e){}
+
+    if(role === "prowesstics"){
+      await loadAdminRecords();
+      REC = ADMIN_RECORDS[0] || {email:"", name:"", answers:{}, rows:[], meta:{}};
+    } else {
+      REC = await api("/data?scope=me");
+      REC.email = REC.email || auth.email;
+      REC.name  = REC.name  || auth.name;
+      if(!Array.isArray(M().log) || !M().log.length) logEvent("signed in for the first time");
+      seedDefaults();
+      queueSave();
+    }
+    $("#gate").classList.add("hide");
+    setSync("ok","Ready");
+    setRole(role);
+    startPolling();
+  }catch(e){
+    $("#gateErr").textContent = e.message || "That email and code do not match.";
+    $("#gateErr").classList.add("show");
+    $("#gateInput").select();
+  }finally{
+    btn.textContent = "Sign in"; btn.disabled = false;
+  }
+}
+$("#gateGo").onclick = tryGate;
+$("#gateEmail").onkeydown = e => { if(e.key==="Enter") $("#gateInput").focus(); };
+$("#gateInput").onkeydown = e => { if(e.key==="Enter") tryGate(); };
+
+function startPolling(){
+  setInterval(async ()=>{
+    if(role !== "prowesstics") return;
+    if(document.activeElement && ["TEXTAREA","INPUT"].includes(document.activeElement.tagName)) return;
+    const before = JSON.stringify(ADMIN_RECORDS.map(r=>r.updatedAt));
+    await loadAdminRecords();
+    if(JSON.stringify(ADMIN_RECORDS.map(r=>r.updatedAt)) !== before){
+      const keep = String(REC.email||"").toLowerCase();
+      const match = ADMIN_RECORDS.find(r=>String(r.email).toLowerCase() === keep);
+      if(match) REC = match;
+      render();
+      toast("Register updated");
+    }
+  }, 25000);
+}
+
+(function init(){
+  setSync("offline","Sign in to begin");
+  $("#gateEmail").focus();
+})();
+
+</script>
+</body>
+</html>
