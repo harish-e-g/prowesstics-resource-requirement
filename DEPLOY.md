@@ -20,7 +20,7 @@ Database: Netlify Blobs, no external service, no keys in the browser
 
    | Key | Value |
    |---|---|
-   | ACCESS_PIN | 4274 |
+   | ACCESS_PIN | a four digit code |
    | ADMIN_PIN | a different four digit code |
    | TOKEN_SECRET | a long random string |
 
